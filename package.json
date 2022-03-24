@@ -1,0 +1,18 @@
+{
+  "name": "react-authentication-app",
+  "version": "1.0.0",
+  "description": "Authentitation app",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node server/index.js"
+  },
+  "author": "Ezequiel Sandes",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "2.8.5",
+    "dotenv": "16.0.0",
+    "express": "4.17.3",
+    "morgan": "1.10.0",
+    "mssql": "8.0.2"
+  }
+}
