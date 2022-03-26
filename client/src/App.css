@@ -2,6 +2,11 @@ html {
   font-size: 62.5%;
 }
 
+body {
+  background-color: rgb(17, 14, 14);
+  color: rgb(170, 170, 170);
+}
+
 .App {
   text-align: center;
   font-size: 2.2rem;

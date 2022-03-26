@@ -8,20 +8,49 @@ function App() {
   const [usernameLog, setUsernameLog] = useState('');
   const [passwordLog, setPasswordLog] = useState('');
 
+  const [loginStatus, setLoginStatus] = useState('');
+
   const register = async () => {
     try {
       // In the port of the server obviously
-      const response = await axios.post(
-        `http://localhost:3001/api/v1/users/signup`,
-        {
+      const res = await axios({
+        method: 'POST',
+        url: `/api/v1/users/signup`,
+        data: {
           username: usernameReg,
           password: passwordReg,
-        }
-      );
+        },
+      });
 
-      console.log(response);
+      console.log(res.data);
+      if (res.data.status === 'success') console.log('Register succesfully');
     } catch (err) {
-      console.log(`⛔⛔⛔: ${err.message}`);
+      console.log(`⛔⛔⛔: ${err.response.data.message}`);
+    }
+  };
+
+  const login = async () => {
+    try {
+      // In the port of the server obviously
+      const res = await axios({
+        method: 'POST',
+        url: '/api/v1/users/login',
+        data: {
+          username: usernameLog,
+          password: passwordLog,
+        },
+      });
+
+      console.log(res.data);
+      if (res.data.status === 'success') {
+        console.log('Logged succesfully!');
+        setLoginStatus(
+          `Logged succesfully! Welcome back ${res.data.data.username}`
+        );
+      }
+    } catch (err) {
+      console.log(`⛔⛔⛔: ${err.response.data.message}`);
+      setLoginStatus(err.response.data.message);
     }
   };
 
@@ -30,6 +59,11 @@ function App() {
     register();
     // setUsernameReg('');
     // setPasswordReg('');
+  };
+
+  const handlerLogin = e => {
+    e.preventDefault();
+    login();
   };
   return (
     <div className='App'>
@@ -68,9 +102,11 @@ function App() {
             onChange={e => setPasswordLog(e.target.value)}
             value={passwordLog}
           />
-          <button>Log in</button>
+          <button onClick={handlerLogin}>Log in</button>
         </form>
       </div>
+
+      <h1>{loginStatus}</h1>
     </div>
   );
 }
