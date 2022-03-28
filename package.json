@@ -10,11 +10,14 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
     "cors": "2.8.5",
     "dotenv": "16.0.0",
     "express": "4.17.3",
+    "jsonwebtoken": "^8.5.1",
     "morgan": "1.10.0",
-    "mssql": "8.0.2"
+    "mssql": "8.0.2",
+    "nanoid": "^3.3.1"
   },
   "devDependencies": {
     "eslint": "^8.12.0"

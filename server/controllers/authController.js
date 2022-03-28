@@ -1,10 +1,16 @@
+const { promisify } = require('util');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const getConnection = require('../server');
+const { customAlphabet } = require('nanoid');
+const { ID_LENGTH, ID_ALPHABET, HASH_SALT, COOKIE_JWT } = require('../config');
+const nanoid = customAlphabet(ID_ALPHABET, ID_LENGTH);
 
 exports.signup = async (req, res) => {
   try {
     const { username } = req.body;
     let { password } = req.body;
+    let userId = '';
 
     if (!username || !password)
       throw new Error(`Username or Password not provided`);
@@ -12,22 +18,20 @@ exports.signup = async (req, res) => {
     const pool = await getConnection();
 
     // Hash the password before save it.
-    password = await bcrypt.hash(password, 12);
+    password = await bcrypt.hash(password, HASH_SALT);
 
     //  Take care about the '' in username and password
     const result = await pool
       .request()
       .query(
-        `INSERT INTO ${process.env.DB_USERNAME_TABLE}(username, password) VALUES ('${username}', '${password}')`
+        `INSERT INTO ${
+          process.env.DB_USERNAME_TABLE
+        }(id, username, password) VALUES ('${(userId =
+          nanoid())}' ,'${username}', '${password}')`
       );
 
     console.log(result);
-    res.status(200).json({
-      status: 'success',
-      data: {
-        username,
-      },
-    });
+    createSendToken({ id: userId, username }, res);
   } catch (err) {
     console.log(`⛔⛔⛔ SIGNUP: ${err.message}`);
     res.status(404).json({
@@ -60,13 +64,7 @@ exports.login = async (req, res) => {
       throw new Error('Incorrect username or password');
     // 401: Error for user not found
 
-    res.status(200).json({
-      status: 'success',
-      data: {
-        id: user.id,
-        username: user.username,
-      },
-    });
+    createSendToken(user, res);
   } catch (err) {
     console.log(`⛔⛔⛔ LOGIN: ${err.message}`);
     res.status(401).json({
@@ -76,8 +74,79 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.protect = async (req, res, next) => {
+  let token;
+
+  try {
+    // 1) Getting token and check if it's there.
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token)
+      res.status(401).json({
+        status: 'fail',
+        message: 'You are not logged in.',
+      });
+
+    console.log(token);
+    // 2) Verification token
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    console.log(decoded);
+    // Of course, possible errors must be caught and handled in the error functions handler.
+    // This is only an example, so I'll not do it but of course, in a real application is a must.
+
+    // 3) Check if user still exists
+
+    // 4) Check if user changed password after the token was issued
+  } catch (err) {
+    res.status(401).json({
+      status: 'fail',
+      message: err.message,
+    });
+  }
+  next();
+};
+
 /***************** AUTH CONTROLLER UTILITIES */
 /******************************************* */
 async function correctPassword(candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
+}
+
+function signToken(id) {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+}
+
+function createSendToken(user, res) {
+  const token = signToken(user.id);
+
+  // Cookie to store the jwt for future to verify protected routes
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ), // To mS = D * Hs * min * mS
+    httpOnly: true, // The browser will not access or modify the cookie
+  };
+
+  // Only will be send on an encrypted connection (https). In Production only we have encrypted connection
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie(COOKIE_JWT, token, cookieOptions);
+
+  // Remove the password from the output
+  user.password = undefined;
+
+  res.status(200).json({
+    status: 'success',
+    token,
+    data: {
+      user,
+    },
+  });
 }
