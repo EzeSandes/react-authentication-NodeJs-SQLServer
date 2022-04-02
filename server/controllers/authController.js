@@ -10,7 +10,7 @@ exports.signup = async (req, res) => {
   try {
     const { username } = req.body;
     let { password } = req.body;
-    let userId = '';
+    let userId = ''; // ID must be provided by the DB(SQL Server) but for this example, I use an npm package
 
     if (!username || !password)
       throw new Error(`Username or Password not provided`);
@@ -30,7 +30,8 @@ exports.signup = async (req, res) => {
           nanoid())}' ,'${username}', '${password}')`
       );
 
-    console.log(result);
+    if (!result) throw new Error('Sig up error. Please try again.');
+
     createSendToken({ id: userId, username }, res);
   } catch (err) {
     console.log(`⛔⛔⛔ SIGNUP: ${err.message}`);
@@ -58,7 +59,6 @@ exports.login = async (req, res) => {
       );
 
     const user = result.recordset[0];
-    console.log('user:', user);
 
     if (!user || !(await correctPassword(password, user.password)))
       throw new Error('Incorrect username or password');
@@ -94,7 +94,6 @@ exports.protect = async (req, res, next) => {
         message: 'Token not valid. Please Log in again.',
       });
 
-    console.log(token);
     // 2) Verification token
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
     // Of course, possible errors must be caught and handled in the error functions handler.
@@ -108,7 +107,6 @@ exports.protect = async (req, res, next) => {
       );
     const currentUser = result.recordset[0];
     if (!currentUser) throw new Error('User not found');
-    console.log('USER: ', currentUser);
 
     // 4) Check if user changed password after the token was issued
     // -- TO-DO
