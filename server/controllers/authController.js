@@ -56,7 +56,7 @@ exports.login = async (req, res) => {
       .query(
         `SELECT * FROM ${process.env.DB_USERNAME_TABLE} WHERE username = '${username}';`
       );
-    console.log(result);
+
     const user = result.recordset[0];
     console.log('user:', user);
 
@@ -84,24 +84,38 @@ exports.protect = async (req, res, next) => {
       req.headers.authorization.startsWith('Bearer')
     ) {
       token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookie.jwt) {
+      token = req.cookie.jwt;
     }
 
     if (!token)
       res.status(401).json({
         status: 'fail',
-        message: 'You are not logged in.',
+        message: 'Token not valid. Please Log in again.',
       });
 
     console.log(token);
     // 2) Verification token
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    console.log(decoded);
     // Of course, possible errors must be caught and handled in the error functions handler.
     // This is only an example, so I'll not do it but of course, in a real application is a must.
 
     // 3) Check if user still exists
+    const result = await (await getConnection())
+      .request()
+      .query(
+        `SELECT * FROM ${process.env.DB_USERNAME_TABLE} WHERE id = '${decoded.id}'`
+      );
+    const currentUser = result.recordset[0];
+    if (!currentUser) throw new Error('User not found');
+    console.log('USER: ', currentUser);
 
     // 4) Check if user changed password after the token was issued
+    // -- TO-DO
+
+    // To access current user information in each request and templates (res.locals)
+    req.user = currentUser;
+    res.locals.user = currentUser;
   } catch (err) {
     res.status(401).json({
       status: 'fail',
