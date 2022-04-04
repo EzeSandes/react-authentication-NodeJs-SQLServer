@@ -123,6 +123,15 @@ exports.protect = async (req, res, next) => {
   next();
 };
 
+exports.logout = (req, res) => {
+  res.cookie(COOKIE_JWT, 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000), // In 10sec
+    httpOnly: true,
+  });
+
+  res.status(200).json({ status: 'success' });
+};
+
 /***************** AUTH CONTROLLER UTILITIES */
 /******************************************* */
 async function correctPassword(candidatePassword, userPassword) {
