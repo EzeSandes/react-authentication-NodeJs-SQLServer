@@ -1,6 +1,8 @@
 # Sign Up & Log In app - React, NodeJS and SQL Server
 
-I wanted to know the basic use of Authorization process for users to future projects. Also, I wanted to use MongoDB but I'd never used SQL Server with NodeJS (Only SQL Server alone) so, In this time I used a relational Database.
+I wanted to know the basic use of Authorization process for users to future projects. Also, I wanted to use MongoDB but I'd never used SQL Server with NodeJS (Only SQL Server alone) so, In this time I used a relational Database. 
+
+__If it works for you, give me a star! ⭐__
 
 ## SQL User Table Model
 
